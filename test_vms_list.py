@@ -17,12 +17,14 @@ def main():
 
     vms_list_response = client.request("/vms/list", "POST", {})
 
-    vms_list_json=json.loads(vms_list_response.content)
+    vms_list_json = json.loads(vms_list_response.content)
 
     print(client.headers)
 
     if isinstance(client, NutanixApiClient):
-        print("client is of type NutanixApiClient")
+        print(
+            "client is of type NutanixApiClient| ###############################################################################################################"
+        )
 
     for entity in vms_list_json["entities"]:
         print(entity["status"]["name"])
