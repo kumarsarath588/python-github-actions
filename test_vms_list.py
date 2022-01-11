@@ -17,9 +17,7 @@ def main():
 
     vms_list_response = client.request("/vms/list", "POST", {})
 
-    vms_list_json = json.loads(
-        vms_list_response.content
-    )
+    vms_list_json=json.loads(vms_list_response.content)
 
     print(client.headers)
 
