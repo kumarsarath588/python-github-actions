@@ -1,0 +1,48 @@
+name: Acceptance Test cases
+on:
+  repository_dispatch:
+    types: [ok-to-test-command]
+jobs:
+  acceptance_test_cases:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install ansible
+        run: |
+          pip install ansible
+          pip install coverage==4.5.4
+      - name: Build and install the collection
+        run: |
+          cd nutanix/ncp
+          ansible-galaxy collection build --force
+          ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
+      - name: Acceptance test cases
+        run: | 
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+          ansible-test units --docker default --python 3.9 --coverage
+          ansible-test coverage report > coverage.txt
+
+      - name: Code Coverage Check
+        run:  |
+              cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+              echo "Code coverage: Checking if code coverage is above threshold..."
+              export TESTCOV_THRESHOLD=60
+              echo "Threshold: $TESTCOV_THRESHOLD %"
+              totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
+              echo "Current test coverage : $totalCoverage %"
+              if (( $(echo "$totalCoverage $TESTCOV_THRESHOLD" | awk '{print ($1 > $2)}') )); then
+                  echo "Coverage passed"
+              else
+                  echo "Current test coverage is below threshold. Please add more unit tests or adjust threshold to a lower value."
+                  echo "Coverage check failed"
+                  exit 1
+              fi
+      - run: echo "🍏 This job's status is ${{ job.status }}."
