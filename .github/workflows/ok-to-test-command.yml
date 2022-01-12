@@ -24,7 +24,6 @@ jobs:
           ansible-galaxy collection build --force
           ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
       - name: Acceptance test cases
-        run: | 
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
           ansible-test units --docker default --python 3.9 --coverage
