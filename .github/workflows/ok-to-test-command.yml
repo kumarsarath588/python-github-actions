@@ -11,21 +11,19 @@ jobs:
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
       - name: Get PR SHA
-        id: sha
-        uses: actions/github-script@v5
+        id: commit_ref_sha
+        uses: actions/github-script@v4
         with:
           result-encoding: string
           script: |
-            const { owner, repo, number } = context.issue;
-            const pr = await github.pulls.get({
-              owner,
-              repo,
-              pull_number: number,
-            });
-            return pr.data.head.sha          
+            return github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });         
       - uses: actions/checkout@v2
         with:
-          ref: ${{ steps.sha.outputs.result }}
+          ref: ${{ steps.commit_ref_sha.outputs.result }}
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
