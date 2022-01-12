@@ -17,11 +17,12 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           result-encoding: string
           script: |
-            return github.pulls.get({
+            const pr = await github.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
-            });         
+              pull_number: context.issue.number,
+            });
+            return pr.data.head.sha
       - uses: actions/checkout@v2
         with:
           ref: ${{ steps.commit_ref_sha.outputs.result }}
