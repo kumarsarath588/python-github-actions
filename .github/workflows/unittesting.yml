@@ -1,4 +1,4 @@
-name: Run compile and sanity tests
+name: Run compile and tests
 
 on:
   push:
@@ -32,5 +32,5 @@ jobs:
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test sanity --docker default --python 3.9 -v
-          ansible-test units --docker default --python 3.9 -v
+          ansible-test sanity --docker default --python 3.9
+          ansible-test units --docker default --python 3.9
