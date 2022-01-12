@@ -9,7 +9,14 @@ jobs:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - run: echo "Printing context ${{ context }}."
+
+      - uses: actions/github-script@v4
+        id: pull_request_payload
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            rerurn context
+      - run: echo "${{ steps.pull_request_payload.outputs.result }}"
 
       - name: Get PR SHA
         id: commit_ref_sha
