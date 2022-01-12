@@ -9,24 +9,31 @@ jobs:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - run: echo "Printing context ${{ context }}."
 
-      - name: Get PR SHA
-        id: commit_ref_sha
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          result-encoding: string
-          script: |
-            const pr = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            });
-            return pr.data.head.sha
+      #- uses: actions/github-script@v5.1.0
+      #  id: pull_request_payload
+      #  with:
+      #    github-token: ${{secrets.GITHUB_TOKEN}}
+      #    script: |
+      #      return github
+      #- run: echo "${{ steps.pull_request_payload.outputs.result }}"
+
+      #- name: Get PR SHA
+      #  id: commit_ref_sha
+      #  uses: actions/github-script@v5.1.0
+      #  with:
+      #    github-token: ${{secrets.GITHUB_TOKEN}}
+      #    result-encoding: string
+      #    script: |
+      #      const pr = await github.pulls.get({
+      #        owner: context.repo.owner,
+      #        repo: context.repo.repo,
+      #        pull_number: github.event.client_payload.pull_request.number,
+      #      });
+      #      return pr.data.head.sha
       - uses: actions/checkout@v2
         with:
-          ref: ${{ steps.commit_ref_sha.outputs.result }}
+          ref: 'refs/pull/${{ github.event.client_payload.pull_request.number }}/merge'
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
