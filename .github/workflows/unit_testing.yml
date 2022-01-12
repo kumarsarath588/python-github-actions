@@ -8,7 +8,7 @@ on:
     branches:
       - main
 jobs:
-  unittesting:
+  unit_testing:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
