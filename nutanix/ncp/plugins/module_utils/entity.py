@@ -1,15 +1,16 @@
 # Copyright: 2021, Ansible Project
 # Simplified BSD License (see licenses/simplified_bsd.txt or
 # https://opensource.org/licenses/BSD-2-Clause )
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
-from base64 import b64encode
+import json
 import time
 import uuid
+from base64 import b64encode
 
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
-import json
 
 try:
     from urllib.parse import urlparse
@@ -20,17 +21,13 @@ except ImportError:
 class Entity:
     """Basic functionality for Nutanix modules"""
 
-    result = dict(
-        changed=False,
-        original_message="",
-        message=""
-    )
+    result = dict(changed=False, original_message="", message="")
 
     methods_of_actions = {
         "create": "post",
         "list": "post",
         "update": "put",
-        "delete": "delete"
+        "delete": "delete",
     }
     kind = ""
     api_version = "3.1.0"
@@ -56,34 +53,41 @@ class Entity:
                 self.module,
                 self.response.get("task_uuid"),
                 self.netloc,
-                self.wait_timeout)
+                self.wait_timeout,
+            )
             self.result["task_information"] = task
 
         if not self.response.get("status"):
             if self.response.get("api_response_list"):
-                self.response["status"] = self.response.get("api_response_list")[
-                    0].get("api_response").get("status")
+                self.response["status"] = (
+                    self.response.get("api_response_list")[0]
+                    .get("api_response")
+                    .get("status")
+                )
             elif "entities" in self.response:
                 if self.response["entities"]:
-                    self.response["status"] = self.response.get("entities")[
-                        0].get("status")
+                    self.response["status"] = self.response.get("entities")[0].get(
+                        "status"
+                    )
                 else:
                     self.response["status"] = {"state": "complete"}
 
         if self.response.get("status") and self.wait:
             state = self.response.get("status").get("state")
             if "pending" in state.lower() or "running" in state.lower():
-                task = self.validate_request(self.module,
-                                             self.response.get("status").get(
-                                                 "execution_context").get("task_uuid"),
-                                             self.netloc,
-                                             self.wait_timeout)
+                task = self.validate_request(
+                    self.module,
+                    self.response.get("status")
+                    .get("execution_context")
+                    .get("task_uuid"),
+                    self.netloc,
+                    self.wait_timeout,
+                )
                 self.response["status"]["state"] = task.get("status")
                 self.result["task_information"] = task
 
         self.result["changed"] = True
-        status = self.response.get(
-            "state") or self.response.get("status").get("state")
+        status = self.response.get("state") or self.response.get("status").get("state")
         if status and status.lower() != "succeeded" or self.action == "list":
             self.result["changed"] = False
             if status.lower() != "complete":
@@ -101,12 +105,8 @@ class Entity:
         else:
             self.url += "/" + str(uuid.UUID(item_uuid)) + "/file"
         response = self.send_request(
-            self.module,
-            "get",
-            self.url,
-            self.data,
-            self.username,
-            self.password)
+            self.module, "get", self.url, self.data, self.username, self.password
+        )
 
         if response.get("state") and response.get("state").lower() == "error":
             self.result["changed"] = False
@@ -125,8 +125,7 @@ class Entity:
             self.data = {"kind": self.kind}
 
     @staticmethod
-    def send_request(module, method, req_url, req_data,
-                     username, password, timeout=30):
+    def send_request(module, method, req_url, req_data, username, password, timeout=30):
         try:
             credentials = bytes(username + ":" + password, encoding="ascii")
         except BaseException:
@@ -134,20 +133,34 @@ class Entity:
 
         encoded_credentials = b64encode(credentials).decode("ascii")
         authorization = "Basic " + encoded_credentials
-        headers = {"Accept": "application/json", "Content-Type": "application/json",
-                   "Authorization": authorization, "cache-control": "no-cache"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": authorization,
+            "cache-control": "no-cache",
+        }
         if req_data is None:
             payload = {}
         else:
             payload = req_data
-        resp, info = fetch_url(module=module, url=req_url, headers=headers,
-                               method=method, data=module.jsonify(payload), timeout=timeout)
-        if not 300 > info['status'] > 199:
-            module.fail_json(msg="Fail: %s" %
-                             ("Status: " +
-                              str(info['msg']) +
-                                 ", Message: " +
-                                 str(info.get('body'))))
+        resp, info = fetch_url(
+            module=module,
+            url=req_url,
+            headers=headers,
+            method=method,
+            data=module.jsonify(payload),
+            timeout=timeout,
+        )
+        if not 300 > info["status"] > 199:
+            module.fail_json(
+                msg="Fail: %s"
+                % (
+                    "Status: "
+                    + str(info["msg"])
+                    + ", Message: "
+                    + str(info.get("body"))
+                )
+            )
 
         body = resp.read() if resp else info.get("body")
         try:
@@ -165,7 +178,8 @@ class Entity:
         url = self.generate_url_from_operations("tasks", netloc, [task_uuid])
         while retries > 0 or not succeeded:
             response = self.send_request(
-                module, "get", url, None, self.username, self.password)
+                module, "get", url, None, self.username, self.password
+            )
             if response.get("status"):
                 status = response.get("status")
                 if "running" not in status.lower():
@@ -178,7 +192,7 @@ class Entity:
     def generate_url_from_operations(self, name, netloc=None, ops=None):
         name = name.split("_")[-1]
         url = "https://" + netloc
-        path = self.__BASEURL__ + '/' + name
+        path = self.__BASEURL__ + "/" + name
         if ops:
             for each in ops:
                 if isinstance(each, str):
@@ -193,7 +207,13 @@ class Entity:
     @staticmethod
     def validate_url(url, netloc, path=""):
         parsed_url = urlparse(url)
-        if url and netloc and "http" in parsed_url.scheme and netloc == parsed_url.netloc and path == parsed_url.path:
+        if (
+            url
+            and netloc
+            and "http" in parsed_url.scheme
+            and netloc == parsed_url.netloc
+            and path == parsed_url.path
+        ):
             return url
         raise ValueError("Incorrect URL :", url)
 
@@ -205,12 +225,19 @@ class Entity:
         self.parse_data()
 
         self.url = self.generate_url_from_operations(
-            self.module_name, self.netloc, self.operations)
+            self.module_name, self.netloc, self.operations
+        )
 
         getattr(self, self.action)()
 
-        self.response = self.send_request(self.module, self.methods_of_actions[self.action],
-                                          self.url, self.data, self.username, self.password)
+        self.response = self.send_request(
+            self.module,
+            self.methods_of_actions[self.action],
+            self.url,
+            self.data,
+            self.username,
+            self.password,
+        )
 
         self.check_response()
 

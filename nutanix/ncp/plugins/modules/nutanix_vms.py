@@ -3,10 +3,11 @@
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: nutanix_vms
 
@@ -60,16 +61,16 @@ options:
 
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
-'''
+"""
 
-EXAMPLES = r'''
-'''
+EXAMPLES = r"""
+"""
 
-RETURN = r'''
-'''
+RETURN = r"""
+"""
 
-from ..module_utils.prism.vms import VM
 from ..module_utils.base_module import BaseModule
+from ..module_utils.prism.vms import VM
 
 
 def run_module():
@@ -81,5 +82,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -3,11 +3,12 @@
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: nutanix_subnets
 
@@ -60,9 +61,9 @@ options:
         default: False
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan-97)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 
 #CREATE action, request to /subnets
 - hosts: [hosts_group]
@@ -111,9 +112,9 @@ EXAMPLES = r'''
         metadata:
             uuid: string
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 CREATE:
     description: CREATE /subnets Response for nutanix subnets
     returned: (for CREATE /subnets  operation)
@@ -176,9 +177,9 @@ DELETE:
 # - 404: Invalid UUID provided
 # - 202: Request Accepted
 
-'''
-from ..module_utils.prism.subnets import Subnet
+"""
 from ..module_utils.base_module import BaseModule
+from ..module_utils.prism.subnets import Subnet
 
 
 def run_module():
@@ -190,5 +191,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
