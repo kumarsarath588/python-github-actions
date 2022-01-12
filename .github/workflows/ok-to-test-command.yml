@@ -10,7 +10,7 @@ jobs:
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v5.1.0
         id: pull_request_payload
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -20,7 +20,7 @@ jobs:
 
       - name: Get PR SHA
         id: commit_ref_sha
-        uses: actions/github-script@v4
+        uses: actions/github-script@v5.1.0
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           result-encoding: string
