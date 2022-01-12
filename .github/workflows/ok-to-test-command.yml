@@ -12,8 +12,9 @@ jobs:
 
       - name: Get PR SHA
         id: commit_ref_sha
-        uses: actions/github-script@v4
+        uses: actions/github-script@v5
         with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
           result-encoding: string
           script: |
             return github.pulls.get({
