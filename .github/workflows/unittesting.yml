@@ -23,9 +23,12 @@ jobs:
         set -x
         docker version
     - name: Install ansible
-      run: pip install ansible
+      run: pip install -r requirements.txt
     - name: Build and install the collection
-      run: ansible-galaxy collection build --force && ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
+      run: |
+        cd nutanix/ncp
+        ansible-galaxy collection build --force
+        ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
     - name: Run tests
       run: |
         cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
