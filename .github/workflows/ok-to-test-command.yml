@@ -13,9 +13,10 @@ jobs:
       - uses: actions/github-script@v4
         id: pull_request_payload
         with:
+          result-encoding: string
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            return context
+            return context.issue
       - run: echo "${{ steps.pull_request_payload.outputs.result }}"
 
       - name: Get PR SHA
