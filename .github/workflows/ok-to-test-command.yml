@@ -15,7 +15,7 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            rerurn context
+            return context
       - run: echo "${{ steps.pull_request_payload.outputs.result }}"
 
       - name: Get PR SHA
