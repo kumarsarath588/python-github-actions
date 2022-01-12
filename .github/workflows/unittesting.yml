@@ -1,0 +1,33 @@
+name: Run compile and sanity tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.x (latest)
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+    - name: Setup Docker
+      uses: docker-practice/actions-setup-docker@v1
+    - name: Print docker version
+      run: |
+        set -x
+        docker version
+    - name: Install ansible
+      run: pip install ansible
+    - name: Build and install the collection
+      run: ansible-galaxy collection build --force && ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
+    - name: Run tests
+      run: |
+        cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+        ansible-test sanity --docker default --python 3.9 -v
+        ansible-test units --docker default --python 3.9 -v
