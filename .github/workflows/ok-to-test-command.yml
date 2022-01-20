@@ -47,7 +47,7 @@ jobs:
         with:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
-            >Integration test run status: ${{ job.status }}
+            >Integration test run status of job id '${{ github.run_id }}' is : ${{ job.status }}
             >${{ env.CODE_COVERAGE_OUTPUT }}
           reaction-type: hooray
 
