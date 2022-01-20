@@ -30,6 +30,6 @@ jobs:
       - name: Acceptance test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test integration --docker default --python 3.9
+          ansible-test integration --python 3.9 -v
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
