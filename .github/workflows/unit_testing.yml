@@ -23,12 +23,17 @@ jobs:
           set -x
           docker version
       - name: Install ansible
-        run: pip install ansible
+        run: |
+          pip install -r requirements.txt
+          pip install shyaml
       - name: Build and install the collection
         run: |
           cd nutanix/ncp
+          NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
+          COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
+          VERSION=$(cat galaxy.yml | shyaml get-value version)
           ansible-galaxy collection build --force
-          ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
+          ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
@@ -52,8 +57,11 @@ jobs:
       - name: Build and install the collection
         run: |
           cd nutanix/ncp
+          NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
+          COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
+          VERSION=$(cat galaxy.yml | shyaml get-value version)
           ansible-galaxy collection build --force
-          ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz --force
+          ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
