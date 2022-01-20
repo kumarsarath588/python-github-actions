@@ -14,8 +14,7 @@ jobs:
       - name: Slash Command Dispatch
         uses: peter-evans/slash-command-dispatch@v2
         with:
-          # token: ${{ env.TOKEN }} # GitHub App installation access token
-          token: ${{ secrets.PAT }} # PAT or OAuth token will also work
+          token: ${{ secrets.PAT }}
           commands: ok-to-test
           permission: write
       - run: echo "🍏 This job's status is ${{ job.status }}."
