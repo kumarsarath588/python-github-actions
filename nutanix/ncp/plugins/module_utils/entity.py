@@ -1,6 +1,5 @@
 # Copyright: 2021, Ansible Project
-# Simplified BSD License (see licenses/simplified_bsd.txt or
-# https://opensource.org/licenses/BSD-2-Clause )
+# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -8,6 +7,7 @@ import json
 import time
 import uuid
 from base64 import b64encode
+from copy import deepcopy
 
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
@@ -21,6 +21,8 @@ except ImportError:
 class Entity:
     """Basic functionality for Nutanix modules"""
 
+    entity_type = "Base"
+    spec_file = ""
     result = dict(changed=False, original_message="", message="")
 
     methods_of_actions = {
@@ -28,6 +30,7 @@ class Entity:
         "list": "post",
         "update": "put",
         "delete": "delete",
+        "absent": "delete",
     }
     kind = ""
     api_version = "3.1.0"
@@ -182,7 +185,7 @@ class Entity:
             )
             if response.get("status"):
                 status = response.get("status")
-                if "running" not in status.lower():
+                if "running" not in status.lower() and "queued" not in status.lower():
                     succeeded = True
                     return response
             time.sleep(timer)
@@ -195,9 +198,9 @@ class Entity:
         path = self.__BASEURL__ + "/" + name
         if ops:
             for each in ops:
-                if isinstance(each, str):
+                if type(each) is str:
                     path += "/" + each
-                elif isinstance(each, dict):
+                elif type(each) is dict:
                     key = list(each.keys())[0]
                     val = each[key]
                     path += "/{0}/{1}".format(key, val)
@@ -217,6 +220,65 @@ class Entity:
             return url
         raise ValueError("Incorrect URL :", url)
 
+    def get_action(self):
+        if self.action in self.methods_of_actions.keys():
+            self.action = self.methods_of_actions[self.action]
+        elif self.action == "present":
+            self.action = "update" if self.data["metadata"].get("uuid") else "create"
+        else:
+            raise ValueError("Wrong action: " + self.action)
+
+    def get_spec(self):
+        from os.path import join
+
+        import yaml
+
+        # Get the current working directory
+
+        ncp_dir = (
+            self.module.tmpdir.split("/tmp")[0]
+            + "/collections/ansible_collections/nutanix/ncp/"
+        )
+
+        file_path = join(ncp_dir, self.spec_file)
+        with open(file_path) as f:
+            # spec = json.loads(str(f.read()))
+            spec = yaml.safe_load(f.read())
+        return spec
+
+    def clean_spec(self, spec):
+        for key, value in spec.copy().items():
+            if isinstance(value, str):
+                if value.startswith("{{") and value.endswith("}}"):
+                    value = getattr(self, value[2:-2], None)
+                    if value:
+                        spec[key] = value
+                    else:
+                        spec.pop(key)
+
+            elif isinstance(value, dict):
+                value = self.clean_spec(value)
+                if value:
+                    spec[key] = value
+                else:
+                    spec.pop(key)
+            elif isinstance(value, list) and key != "required":
+                obj = value.pop(0)
+                list_key = obj.pop("list_key")
+                sub_spec_key = list_key.split("__")[-1]
+                if list_key:
+                    value = self.get_attr_spec(
+                        sub_spec_key, getattr(self, list_key, None)
+                    )
+                    if value:
+                        spec[key] = value
+                    else:
+                        spec.pop(key)
+        requirements = spec.pop("required")
+        # if not set(requirements) <= spec.keys() or not spec:
+        #     return None
+        return spec
+
     def build(self):
 
         self.username = self.credentials["username"]
@@ -227,6 +289,8 @@ class Entity:
         self.url = self.generate_url_from_operations(
             self.module_name, self.netloc, self.operations
         )
+
+        self.get_action()
 
         getattr(self, self.action)()
 
@@ -245,18 +309,27 @@ class Entity:
 
         if module.check_mode:
             module.exit_json(**self.result)
-
         for key, value in module.params.items():
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    setattr(self, k, v)
             setattr(self, key, value)
+        self.module = module
 
-        self.url = self.credentials.get("url")
+        spec = self.get_spec()
+        self.clean_spec(spec)
+        self.data = spec
+
+        self.url = self.auth.get("url")
+        self.credentials = self.auth.get("credentials")
 
         if not self.url:
-            self.url = str(self.ip_address) + ":" + str(self.port)
+            self.url = (
+                str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
+            )
 
         self.netloc = self.url
         self.module_name = module._name
-        self.module = module
         self.build()
 
         module.exit_json(**self.result)
