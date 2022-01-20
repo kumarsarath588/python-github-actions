@@ -18,10 +18,6 @@ jobs:
           python-version: '3.9'
       - name: Setup Docker
         uses: docker-practice/actions-setup-docker@v1
-      - name: Print docker version
-        run: |
-          set -x
-          docker version
       - name: Install ansible
         run: |
           pip install -r requirements.txt
@@ -48,12 +44,10 @@ jobs:
           python-version: '3.9'
       - name: Setup Docker
         uses: docker-practice/actions-setup-docker@v1
-      - name: Print docker version
-        run: |
-          set -x
-          docker version
       - name: Install ansible
-        run: pip install ansible
+        run: |
+          pip install -r requirements.txt
+          pip install shyaml
       - name: Build and install the collection
         run: |
           cd nutanix/ncp
