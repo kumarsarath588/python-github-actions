@@ -79,10 +79,3 @@ jobs:
                   echo "Coverage check failed"
                   exit 1
               fi
-      - name: Create comment
-        uses: peter-evans/create-or-update-comment@v1
-        if: ${{ always() }}
-        with:
-          issue-number: 10
-          body: |
-            > Unit Test converage is : ${{ env.TOTAL_COVERAGE }} %
