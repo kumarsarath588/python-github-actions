@@ -2,15 +2,15 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
-__metaclass__ = type
 import json
 import time
 import uuid
 from base64 import b64encode
-from copy import deepcopy
 
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
+
+__metaclass__ = type
 
 try:
     from urllib.parse import urlparse
@@ -221,11 +221,11 @@ class Entity:
         raise ValueError("Incorrect URL :", url)
 
     def get_action(self):
-        if self.action in self.methods_of_actions.keys():
-            self.action = self.methods_of_actions[self.action]
-        elif self.action == "present":
+        if self.action == "present":
             self.action = "update" if self.data["metadata"].get("uuid") else "create"
-        else:
+        elif self.action == "absent":
+            self.action = self.methods_of_actions[self.action]
+        elif self.action not in self.methods_of_actions.keys():
             raise ValueError("Wrong action: " + self.action)
 
     def get_spec(self):
@@ -250,8 +250,12 @@ class Entity:
         for key, value in spec.copy().items():
             if isinstance(value, str):
                 if value.startswith("{{") and value.endswith("}}"):
-                    value = getattr(self, value[2:-2], None)
+                    value = value[2:-2]
+
+                    value = getattr(self, value, None)
                     if value:
+                        if key == "guest_customization":
+                            value = self.get_attr_spec(key, value)
                         spec[key] = value
                     else:
                         spec.pop(key)
@@ -274,9 +278,6 @@ class Entity:
                         spec[key] = value
                     else:
                         spec.pop(key)
-        requirements = spec.pop("required")
-        # if not set(requirements) <= spec.keys() or not spec:
-        #     return None
         return spec
 
     def build(self):

@@ -147,6 +147,17 @@ def run_module():
             metadata__use_categories_mapping=dict(
                 type="bool", aliases=["use_categories_mapping"], default=False
             ),
+            spec__resources__guest_customization=dict(
+                type="dict",
+                aliases=["guest_customization"],
+                options=dict(
+                    type=dict(
+                        type="str", choices=["sysprep", "cloud_init"], default="sysprep"
+                    ),
+                    script_path=dict(type="str", required=True),
+                    is_overridable=dict(type="bool", default=False),
+                ),
+            ),
         )
     )
 

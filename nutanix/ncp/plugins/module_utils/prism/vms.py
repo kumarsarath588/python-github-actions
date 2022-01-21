@@ -2,10 +2,12 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-__metaclass__ = type
+from base64 import b64encode
 from copy import deepcopy
 
 from .prism import Prism
+
+__metaclass__ = type
 
 
 class VM(Prism):
@@ -14,7 +16,11 @@ class VM(Prism):
     entity_type = "NutanixVm"
 
     def get_attr_spec(self, param, param_spec, **kwargs):
-        param_method_spec = {"disk_list": VMDisk, "nic_list": VMNetwork}
+        param_method_spec = {
+            "disk_list": VMDisk,
+            "nic_list": VMNetwork,
+            "guest_customization": GuestCustomizationSpec,
+        }
 
         if param in param_method_spec:
             handler = param_method_spec[param]()
@@ -105,18 +111,12 @@ class VMDisk(VMSpec):
     def __get_image_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "images")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def __get_storage_container_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "storage-containers")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
@@ -160,7 +160,7 @@ class VMDisk(VMSpec):
                     "storage_container_reference": {
                         "kind": "storage_container",
                         "uuid": disk_param["storage_container_uuid"],
-                    },
+                    }
                 }
             final_disk_list.append(disk_final)
         self.remove_null_references(final_disk_list)
@@ -182,11 +182,7 @@ class VMNetwork(VMSpec):
                 "is_connected": False,
                 "network_function_nic_type": "INGRESS",
                 "nic_type": "",
-                "subnet_reference": {
-                    "kind": "",
-                    "name": "",
-                    "uuid": "",
-                },
+                "subnet_reference": {"kind": "", "name": "", "uuid": ""},
                 "network_function_chain_reference": "",
                 "mac_address": "",
                 "ip_endpoint_list": [],
@@ -196,14 +192,10 @@ class VMNetwork(VMSpec):
     def __get_subnet_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "subnets")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
-        _di_map = {}
         final_nic_list = []
         for nic_param in param_spec:
             nic_final = self.get_default_spec()
@@ -226,6 +218,47 @@ class VMNetwork(VMSpec):
         self.remove_null_references(final_nic_list)
 
         return final_nic_list
+
+    def __call__(self, param_spec, **kwargs):
+        return self._get_api_spec(param_spec, **kwargs)
+
+
+class GuestCustomizationSpec(VMSpec):
+    @staticmethod
+    def get_default_spec():
+        return deepcopy(
+            {
+                "sysprep": {
+                    "install_type": "",
+                    "unattend_xml": "",
+                    "custom_key_values": {},
+                },
+                "cloud_init": {
+                    "meta_data": "",
+                    "user_data": "",
+                    "custom_key_values": {},
+                },
+                "is_overridable": "",
+            }
+        )
+
+    def _get_api_spec(self, param_spec, **kwargs):
+
+        gc_spec = self.get_default_spec()
+        script_file_path = param_spec["script_path"]
+        with open(script_file_path, "r") as f:
+            content = f.read()
+        content = b64encode(content)
+        type = param_spec["type"]
+        if type == "sysprep":
+            gc_spec[type]["unattend_xml"] = content
+        elif type == "cloud_init":
+            gc_spec[type]["user_data"] = content
+        gc_spec["is_overridable"] = param_spec.get("is_overridable")
+
+        self.remove_null_references(gc_spec)
+
+        return gc_spec
 
     def __call__(self, param_spec, **kwargs):
         return self._get_api_spec(param_spec, **kwargs)
