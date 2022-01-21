@@ -79,11 +79,10 @@ jobs:
                   echo "Coverage check failed"
                   exit 1
               fi
-      # Update the comment back
-      - name: Update comment
+      - name: Create comment
         uses: peter-evans/create-or-update-comment@v1
         if: ${{ always() }}
         with:
-          issue-number: ${{ github.event.client_payload.pull_request.number }}
+          issue-number: 10
           body: |
             > Unit Test converage is : ${{ env.TOTAL_COVERAGE }} %
