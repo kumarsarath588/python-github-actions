@@ -67,7 +67,7 @@ jobs:
         run:  |
               cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
               echo "Code coverage: Checking if code coverage is above threshold..."
-              export TESTCOV_THRESHOLD=60
+              export TESTCOV_THRESHOLD=55
               echo "Threshold: $TESTCOV_THRESHOLD %"
               totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
               echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
